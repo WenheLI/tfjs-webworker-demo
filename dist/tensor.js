@@ -253,7 +253,12 @@ var Tensor = /** @class */ (function () {
      * a flat array.
      */
     Tensor.make = function (shape, data, dtype, backend) {
-        return new Tensor(shape, dtype, data.values, data.dataId, backend);
+        var backendVals = data.values;
+        if (data.values != null && dtype === 'string' &&
+            util.isString(data.values[0])) {
+            backendVals = data.values.map(function (d) { return util.encodeString(d); });
+        }
+        return new Tensor(shape, dtype, backendVals, data.dataId, backend);
     };
     /** Flatten a Tensor to a 1D array. */
     /** @doc {heading: 'Tensors', subheading: 'Classes'} */
@@ -394,9 +399,26 @@ var Tensor = /** @class */ (function () {
     /** @doc {heading: 'Tensors', subheading: 'Classes'} */
     Tensor.prototype.data = function () {
         return __awaiter(this, void 0, void 0, function () {
+            var data, bytes;
             return __generator(this, function (_a) {
-                this.throwIfDisposed();
-                return [2 /*return*/, trackerFn().read(this.dataId)];
+                switch (_a.label) {
+                    case 0:
+                        this.throwIfDisposed();
+                        data = trackerFn().read(this.dataId);
+                        if (!(this.dtype === 'string')) return [3 /*break*/, 2];
+                        return [4 /*yield*/, data];
+                    case 1:
+                        bytes = _a.sent();
+                        try {
+                            return [2 /*return*/, bytes.map(function (b) { return util.decodeString(b); })];
+                        }
+                        catch (_b) {
+                            throw new Error('Failed to decode the string bytes into utf-8. ' +
+                                'To get the original bytes, call tensor.bytes().');
+                        }
+                        _a.label = 2;
+                    case 2: return [2 /*return*/, data];
+                }
             });
         });
     };
@@ -407,7 +429,39 @@ var Tensor = /** @class */ (function () {
     /** @doc {heading: 'Tensors', subheading: 'Classes'} */
     Tensor.prototype.dataSync = function () {
         this.throwIfDisposed();
-        return trackerFn().readSync(this.dataId);
+        var data = trackerFn().readSync(this.dataId);
+        if (this.dtype === 'string') {
+            try {
+                return data.map(function (b) { return util.decodeString(b); });
+            }
+            catch (_a) {
+                throw new Error('Failed to decode the string bytes into utf-8. ' +
+                    'To get the original bytes, call tensor.bytes().');
+            }
+        }
+        return data;
+    };
+    /** Returns the underlying bytes of the tensor's data. */
+    Tensor.prototype.bytes = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var data;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        this.throwIfDisposed();
+                        return [4 /*yield*/, trackerFn().read(this.dataId)];
+                    case 1:
+                        data = _a.sent();
+                        if (this.dtype === 'string') {
+                            return [2 /*return*/, data];
+                        }
+                        else {
+                            return [2 /*return*/, new Uint8Array(data.buffer)];
+                        }
+                        return [2 /*return*/];
+                }
+            });
+        });
     };
     /**
      * Disposes `tf.Tensor` from memory.

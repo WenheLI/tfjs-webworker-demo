@@ -14,16 +14,16 @@
  * limitations under the License.
  * =============================================================================
  */
-import { ArrayMap, DataType, DataTypeMap, DataValues, NumericDataType, Rank, ShapeMap, SingleValueMap, TensorLike, TensorLike1D, TensorLike3D, TensorLike4D } from './types';
+import { ArrayMap, BackendValues, DataType, DataTypeMap, NumericDataType, Rank, ShapeMap, SingleValueMap, TensorLike, TensorLike1D, TensorLike3D, TensorLike4D } from './types';
 export interface TensorData<D extends DataType> {
     dataId?: DataId;
     values?: DataTypeMap[D];
 }
 export interface Backend {
-    read(dataId: object): Promise<DataValues>;
-    readSync(dataId: object): DataValues;
+    read(dataId: object): Promise<BackendValues>;
+    readSync(dataId: object): BackendValues;
     disposeData(dataId: object): void;
-    write(dataId: object, values: DataValues): void;
+    write(dataId: object, values: BackendValues): void;
 }
 /**
  * A mutable object, similar to `tf.Tensor`, that allows users to set values
@@ -67,9 +67,9 @@ export interface TensorTracker {
     registerTensor(t: Tensor, backend?: Backend): void;
     disposeTensor(t: Tensor): void;
     disposeVariable(v: Variable): void;
-    write(backend: Backend, dataId: DataId, values: DataValues): void;
-    read(dataId: DataId): Promise<DataValues>;
-    readSync(dataId: DataId): DataValues;
+    write(backend: Backend, dataId: DataId, values: BackendValues): void;
+    read(dataId: DataId): Promise<BackendValues>;
+    readSync(dataId: DataId): BackendValues;
     registerVariable(v: Variable): void;
     nextTensorId(): number;
     nextVariableId(): number;
@@ -279,7 +279,7 @@ export declare class Tensor<R extends Rank = Rank> {
      * numpy.ndarray.strides.html
      */
     readonly strides: number[];
-    protected constructor(shape: ShapeMap[R], dtype: DataType, values?: DataValues, dataId?: DataId, backend?: Backend);
+    protected constructor(shape: ShapeMap[R], dtype: DataType, values?: BackendValues, dataId?: DataId, backend?: Backend);
     /**
      * Makes a new tensor with the provided shape and values. Values should be in
      * a flat array.
@@ -370,6 +370,8 @@ export declare class Tensor<R extends Rank = Rank> {
      */
     /** @doc {heading: 'Tensors', subheading: 'Classes'} */
     dataSync<D extends DataType = NumericDataType>(): DataTypeMap[D];
+    /** Returns the underlying bytes of the tensor's data. */
+    bytes(): Promise<Uint8Array[] | Uint8Array>;
     /**
      * Disposes `tf.Tensor` from memory.
      */

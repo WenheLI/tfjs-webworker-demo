@@ -17,8 +17,6 @@
 import { NamedTensor, NamedTensorMap } from '../tensor_types';
 import { TypedArray } from '../types';
 import { ModelArtifacts, ModelArtifactsInfo, WeightGroup, WeightsManifestEntry } from './types';
-/** Used to delimit neighboring strings when encoding string tensors. */
-export declare const STRING_DELIMITER = "\0";
 /**
  * Encode a map from names to weight values as an ArrayBuffer, along with an
  * `Array` of `WeightsManifestEntry` as specification of the encoded weights.

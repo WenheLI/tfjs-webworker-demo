@@ -108,37 +108,37 @@ jasmine_util_1.describeWithFlags('PlatformNode', jasmine_util_1.NODE_ENVS, funct
     }); });
     it('encodeUTF8 single string', function () {
         var platform = new platform_node_1.PlatformNode();
-        var bytes = platform.encodeUTF8('hello');
+        var bytes = platform.encode('hello', 'utf-8');
         expect(bytes.length).toBe(5);
         expect(bytes).toEqual(new Uint8Array([104, 101, 108, 108, 111]));
     });
     it('encodeUTF8 two strings delimited', function () {
         var platform = new platform_node_1.PlatformNode();
-        var bytes = platform.encodeUTF8('hello\x00world');
+        var bytes = platform.encode('hello\x00world', 'utf-8');
         expect(bytes.length).toBe(11);
         expect(bytes).toEqual(new Uint8Array([104, 101, 108, 108, 111, 0, 119, 111, 114, 108, 100]));
     });
     it('encodeUTF8 cyrillic', function () {
         var platform = new platform_node_1.PlatformNode();
-        var bytes = platform.encodeUTF8('Здраво');
+        var bytes = platform.encode('Здраво', 'utf-8');
         expect(bytes.length).toBe(12);
         expect(bytes).toEqual(new Uint8Array([208, 151, 208, 180, 209, 128, 208, 176, 208, 178, 208, 190]));
     });
-    it('decodeUTF8 single string', function () {
+    it('decode single string', function () {
         var platform = new platform_node_1.PlatformNode();
-        var s = platform.decodeUTF8(new Uint8Array([104, 101, 108, 108, 111]));
+        var s = platform.decode(new Uint8Array([104, 101, 108, 108, 111]), 'utf8');
         expect(s.length).toBe(5);
         expect(s).toEqual('hello');
     });
-    it('decodeUTF8 two strings delimited', function () {
+    it('decode two strings delimited', function () {
         var platform = new platform_node_1.PlatformNode();
-        var s = platform.decodeUTF8(new Uint8Array([104, 101, 108, 108, 111, 0, 119, 111, 114, 108, 100]));
+        var s = platform.decode(new Uint8Array([104, 101, 108, 108, 111, 0, 119, 111, 114, 108, 100]), 'utf8');
         expect(s.length).toBe(11);
         expect(s).toEqual('hello\x00world');
     });
-    it('decodeUTF8 cyrillic', function () {
+    it('decode cyrillic', function () {
         var platform = new platform_node_1.PlatformNode();
-        var s = platform.decodeUTF8(new Uint8Array([208, 151, 208, 180, 209, 128, 208, 176, 208, 178, 208, 190]));
+        var s = platform.decode(new Uint8Array([208, 151, 208, 180, 209, 128, 208, 176, 208, 178, 208, 190]), 'utf8');
         expect(s.length).toBe(6);
         expect(s).toEqual('Здраво');
     });

@@ -43,14 +43,15 @@ var operation_1 = require("./operation");
  * ```
  *
  * @param values The values of the tensor. Can be nested array of numbers,
- *     or a flat array, or a `TypedArray`.
+ *     or a flat array, or a `TypedArray`. If the values are strings,
+ *     they will be encoded as utf-8 and kept as `Uint8Array[]`.
  * @param shape The shape of the tensor. Optional. If not provided,
  *   it is inferred from `values`.
  * @param dtype The data type.
  */
 /** @doc {heading: 'Tensors', subheading: 'Creation'} */
 function tensor(values, shape, dtype) {
-    var inferredShape = tensor_util_env_1.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values, dtype);
     return makeTensor(values, shape, inferredShape, dtype);
 }
 exports.tensor = tensor;
@@ -93,7 +94,7 @@ function makeTensor(values, shape, inferredShape, dtype) {
     shape = shape || inferredShape;
     values = dtype !== 'string' ?
         util_1.toTypedArray(values, dtype, environment_1.ENV.getBool('DEBUG')) :
-        util_1.flatten(values);
+        util_1.flatten(values, [], true);
     return tensor_1.Tensor.make(shape, { values: values }, dtype);
 }
 /**
@@ -111,9 +112,15 @@ function makeTensor(values, shape, inferredShape, dtype) {
  */
 /** @doc {heading: 'Tensors', subheading: 'Creation'} */
 function scalar(value, dtype) {
-    if ((util_1.isTypedArray(value) || Array.isArray(value)) && dtype !== 'complex64') {
+    if (((util_1.isTypedArray(value) && dtype !== 'string') || Array.isArray(value)) &&
+        dtype !== 'complex64') {
         throw new Error('Error creating a new Scalar: value must be a primitive ' +
             '(number|boolean|string)');
+    }
+    if (dtype === 'string' && util_1.isTypedArray(value) &&
+        !(value instanceof Uint8Array)) {
+        throw new Error('When making a scalar from encoded string, ' +
+            'the value must be `Uint8Array`.');
     }
     var shape = [];
     var inferredShape = [];
@@ -137,7 +144,7 @@ exports.scalar = scalar;
 /** @doc {heading: 'Tensors', subheading: 'Creation'} */
 function tensor1d(values, dtype) {
     util_1.assertNonNull(values);
-    var inferredShape = tensor_util_env_1.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values, dtype);
     if (inferredShape.length !== 1) {
         throw new Error('tensor1d() requires values to be a flat/TypedArray');
     }
@@ -172,7 +179,7 @@ function tensor2d(values, shape, dtype) {
     if (shape != null && shape.length !== 2) {
         throw new Error('tensor2d() requires shape to have two numbers');
     }
-    var inferredShape = tensor_util_env_1.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values, dtype);
     if (inferredShape.length !== 2 && inferredShape.length !== 1) {
         throw new Error('tensor2d() requires values to be number[][] or flat/TypedArray');
     }
@@ -210,7 +217,7 @@ function tensor3d(values, shape, dtype) {
     if (shape != null && shape.length !== 3) {
         throw new Error('tensor3d() requires shape to have three numbers');
     }
-    var inferredShape = tensor_util_env_1.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values, dtype);
     if (inferredShape.length !== 3 && inferredShape.length !== 1) {
         throw new Error('tensor3d() requires values to be number[][][] or flat/TypedArray');
     }
@@ -248,7 +255,7 @@ function tensor4d(values, shape, dtype) {
     if (shape != null && shape.length !== 4) {
         throw new Error('tensor4d() requires shape to have four numbers');
     }
-    var inferredShape = tensor_util_env_1.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values, dtype);
     if (inferredShape.length !== 4 && inferredShape.length !== 1) {
         throw new Error('tensor4d() requires values to be number[][][][] or flat/TypedArray');
     }
@@ -286,7 +293,7 @@ function tensor5d(values, shape, dtype) {
     if (shape != null && shape.length !== 5) {
         throw new Error('tensor5d() requires shape to have five numbers');
     }
-    var inferredShape = tensor_util_env_1.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values, dtype);
     if (inferredShape.length !== 5 && inferredShape.length !== 1) {
         throw new Error('tensor5d() requires values to be ' +
             'number[][][][][] or flat/TypedArray');
@@ -325,7 +332,7 @@ function tensor6d(values, shape, dtype) {
     if (shape != null && shape.length !== 6) {
         throw new Error('tensor6d() requires shape to have six numbers');
     }
-    var inferredShape = tensor_util_env_1.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values, dtype);
     if (inferredShape.length !== 6 && inferredShape.length !== 1) {
         throw new Error('tensor6d() requires values to be number[][][][][][] or ' +
             'flat/TypedArray');

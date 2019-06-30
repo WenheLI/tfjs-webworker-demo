@@ -467,12 +467,12 @@ jasmine_util_1.describeWithFlags('conv to matmul', backend_webgl_test_registry_1
 // For operations on non-trivial matrix sizes, we skip the CPU-only ENV and use
 // only WebGL ENVs.
 jasmine_util_1.describeWithFlags('gramSchmidt-non-tiny', backend_webgl_test_registry_1.WEBGL_ENVS, function () {
-    it('16x128', function () { return __awaiter(_this, void 0, void 0, function () {
+    it('16x32', function () { return __awaiter(_this, void 0, void 0, function () {
         var xs, y, _a, _b;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
-                    xs = tf.randomUniform([16, 128]);
+                    xs = tf.randomUniform([16, 32]);
                     y = tf.linalg.gramSchmidt(xs);
                     _a = test_util_1.expectArraysClose;
                     return [4 /*yield*/, y.matMul(y.transpose()).data()];

@@ -56,8 +56,17 @@ var tf = require("../../index");
 var jasmine_util_1 = require("../../jasmine_util");
 var ops_1 = require("../../ops/ops");
 var test_util_1 = require("../../test_util");
+var util_1 = require("../../util");
 var backend_cpu_1 = require("./backend_cpu");
 var backend_cpu_test_registry_1 = require("./backend_cpu_test_registry");
+/** Private test util for encoding array of strings in utf-8. */
+function encodeStrings(a) {
+    return a.map(function (s) { return util_1.encodeString(s); });
+}
+/** Private test util for decoding array of strings in utf-8. */
+function decodeStrings(bytes) {
+    return bytes.map(function (b) { return util_1.decodeString(b); });
+}
 jasmine_util_1.describeWithFlags('backendCPU', backend_cpu_test_registry_1.CPU_ENVS, function () {
     var backend;
     beforeEach(function () {
@@ -69,17 +78,17 @@ jasmine_util_1.describeWithFlags('backendCPU', backend_cpu_test_registry_1.CPU_E
     });
     it('register empty string tensor and write', function () {
         var t = tf.Tensor.make([3], {}, 'string');
-        backend.write(t.dataId, ['c', 'a', 'b']);
-        test_util_1.expectArraysEqual(backend.readSync(t.dataId), ['c', 'a', 'b']);
+        backend.write(t.dataId, encodeStrings(['c', 'a', 'b']));
+        test_util_1.expectArraysEqual(decodeStrings(backend.readSync(t.dataId)), ['c', 'a', 'b']);
     });
     it('register string tensor with values', function () {
         var t = tf.Tensor.make([3], { values: ['a', 'b', 'c'] }, 'string');
-        test_util_1.expectArraysEqual(backend.readSync(t.dataId), ['a', 'b', 'c']);
+        test_util_1.expectArraysEqual(decodeStrings(backend.readSync(t.dataId)), ['a', 'b', 'c']);
     });
     it('register string tensor with values and overwrite', function () {
         var t = tf.Tensor.make([3], { values: ['a', 'b', 'c'] }, 'string');
-        backend.write(t.dataId, ['c', 'a', 'b']);
-        test_util_1.expectArraysEqual(backend.readSync(t.dataId), ['c', 'a', 'b']);
+        backend.write(t.dataId, encodeStrings(['c', 'a', 'b']));
+        test_util_1.expectArraysEqual(decodeStrings(backend.readSync(t.dataId)), ['c', 'a', 'b']);
     });
     it('register string tensor with values and mismatched shape', function () {
         expect(function () { return tf.tensor(['a', 'b', 'c'], [4], 'string'); }).toThrowError();
@@ -143,7 +152,7 @@ jasmine_util_1.describeWithFlags('memory cpu', backend_cpu_test_registry_1.CPU_E
         var mem = tf.memory();
         expect(mem.numTensors).toBe(2);
         expect(mem.numDataBuffers).toBe(2);
-        expect(mem.numBytes).toBe(6);
+        expect(mem.numBytes).toBe(5);
         expect(mem.unreliable).toBe(true);
         var expectedReasonGC = 'The reported memory is an upper bound. Due to automatic garbage ' +
             'collection, the true allocated memory may be less.';

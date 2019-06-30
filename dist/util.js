@@ -129,16 +129,19 @@ exports.assertNonNull = assertNonNull;
  *
  *  @param arr The nested array to flatten.
  *  @param result The destination array which holds the elements.
+ *  @param skipTypedArray If true, avoids flattening the typed arrays. Defaults
+ *      to false.
  */
 /** @doc {heading: 'Util', namespace: 'util'} */
-function flatten(arr, result) {
+function flatten(arr, result, skipTypedArray) {
     if (result === void 0) { result = []; }
+    if (skipTypedArray === void 0) { skipTypedArray = false; }
     if (result == null) {
         result = [];
     }
-    if (Array.isArray(arr) || isTypedArray(arr)) {
+    if (Array.isArray(arr) || isTypedArray(arr) && !skipTypedArray) {
         for (var i = 0; i < arr.length; ++i) {
-            flatten(arr[i], result);
+            flatten(arr[i], result, skipTypedArray);
         }
     }
     else {
@@ -460,7 +463,7 @@ function bytesFromStringArray(arr) {
         return 0;
     }
     var bytes = 0;
-    arr.forEach(function (x) { return bytes += x.length * 2; });
+    arr.forEach(function (x) { return bytes += x.length; });
     return bytes;
 }
 exports.bytesFromStringArray = bytesFromStringArray;
@@ -675,4 +678,31 @@ function fetch(path, requestInits) {
     return environment_1.ENV.platform.fetch(path, requestInits);
 }
 exports.fetch = fetch;
+/**
+ * Encodes the provided string into bytes using the provided encoding scheme.
+ *
+ * @param s The string to encode.
+ * @param encoding The encoding scheme. Defaults to utf-8.
+ *
+ */
+/** @doc {heading: 'Util'} */
+function encodeString(s, encoding) {
+    if (encoding === void 0) { encoding = 'utf-8'; }
+    encoding = encoding || 'utf-8';
+    return environment_1.ENV.platform.encode(s, encoding);
+}
+exports.encodeString = encodeString;
+/**
+ * Decodes the provided bytes into a string using the provided encoding scheme.
+ * @param bytes The bytes to decode.
+ *
+ * @param encoding The encoding scheme. Defaults to utf-8.
+ */
+/** @doc {heading: 'Util'} */
+function decodeString(bytes, encoding) {
+    if (encoding === void 0) { encoding = 'utf-8'; }
+    encoding = encoding || 'utf-8';
+    return environment_1.ENV.platform.decode(bytes, encoding);
+}
+exports.decodeString = decodeString;
 //# sourceMappingURL=util.js.map

@@ -37,7 +37,8 @@ import { DataType, Rank, ShapeMap } from '../types';
  * ```
  *
  * @param values The values of the tensor. Can be nested array of numbers,
- *     or a flat array, or a `TypedArray`.
+ *     or a flat array, or a `TypedArray`. If the values are strings,
+ *     they will be encoded as utf-8 and kept as `Uint8Array[]`.
  * @param shape The shape of the tensor. Optional. If not provided,
  *   it is inferred from `values`.
  * @param dtype The data type.
@@ -58,7 +59,7 @@ declare function tensor<R extends Rank>(values: TensorLike, shape?: ShapeMap[R],
  * @param dtype The data type.
  */
 /** @doc {heading: 'Tensors', subheading: 'Creation'} */
-declare function scalar(value: number | boolean | string, dtype?: DataType): Scalar;
+declare function scalar(value: number | boolean | string | Uint8Array, dtype?: DataType): Scalar;
 /**
  * Creates rank-1 `tf.Tensor` with the provided values, shape and dtype.
  *

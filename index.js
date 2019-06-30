@@ -1,15 +1,20 @@
-let work = new Worker('./work.js');
+// let work = new Worker('./work.js');
+const MOBILENET_MODEL_PATH = 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json';
 
-let img = document.getElementById('img');
+let task = async () => {
+    let dog = document.getElementById('dog');
+    let bitMap = await createImageBitmap(dog);
+    let worker = new Worker('./work.js');
+    worker.postMessage({bitMap}, [bitMap]);
+    worker.addEventListener('message', async (data) => {
 
-let val = tf.browser.fromPixels(img);
-const offset = tf.scalar(127.5);
-// Normalize the image from [0, 255] to [-1, 1].
-const normalized = val.sub(offset).div(offset);
-work.postMessage({val: normalized.dataSync()})
+        let model = await tf.loadLayersModel(MOBILENET_MODEL_PATH);
+        let res = model.predict(tf.tensor(data.data.pix, [1,224,224,3]));
+        const {values, indices} = tf.topk(res, 5);
+        values.print();
+        indices.print();
 
-work.onmessage = (data) => {
-    let res = data.data;
-    const {values, indices} = res;
-    console.log(`It is a ${IMAGENET_CLASSES[indices]} with ${values*100}% confidence`)
+    });
 }
+
+task();

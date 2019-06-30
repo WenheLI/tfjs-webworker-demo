@@ -285,9 +285,7 @@ var MathBackendWebGL = /** @class */ (function () {
             }
             this.fromPixels2DContext.canvas.width = pixels.width;
             this.fromPixels2DContext.canvas.height = pixels.height;
-            this.fromPixels2DContext.drawImage(
-            //@ts-ignore
-            pixels, 0, 0, pixels.width, pixels.height);
+            this.fromPixels2DContext.drawImage(pixels, 0, 0, pixels.width, pixels.height);
             //@ts-ignore
             pixels = this.fromPixels2DContext.canvas;
         }
@@ -835,7 +833,9 @@ var MathBackendWebGL = /** @class */ (function () {
     };
     MathBackendWebGL.prototype.tile = function (x, reps) {
         if (x.dtype === 'string') {
-            var buf = array_ops_1.buffer(x.shape, x.dtype, this.readSync(x.dataId));
+            var data = this.readSync(x.dataId);
+            var decodedData = data.map(function (d) { return util.decodeString(d); });
+            var buf = array_ops_1.buffer(x.shape, x.dtype, decodedData);
             return tile_impl_1.tile(buf, reps);
         }
         var program = new tile_gpu_1.TileProgram(x.shape, reps);

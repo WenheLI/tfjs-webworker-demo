@@ -170,9 +170,7 @@ var MathBackendCPU = /** @class */ (function () {
             }
             this.fromPixels2DContext.canvas.width = pixels.width;
             this.fromPixels2DContext.canvas.height = pixels.height;
-            this.fromPixels2DContext.drawImage(
-            //@ts-ignore
-            pixels, 0, 0, pixels.width, pixels.height);
+            this.fromPixels2DContext.drawImage(pixels, 0, 0, pixels.width, pixels.height);
             vals = this.fromPixels2DContext
                 .getImageData(0, 0, pixels.width, pixels.height)
                 .data;
@@ -216,7 +214,18 @@ var MathBackendCPU = /** @class */ (function () {
         return this.data.get(dataId).values;
     };
     MathBackendCPU.prototype.bufferSync = function (t) {
-        return ops_1.buffer(t.shape, t.dtype, this.readSync(t.dataId));
+        var data = this.readSync(t.dataId);
+        var decodedData = data;
+        if (t.dtype === 'string') {
+            try {
+                // Decode the bytes into string.
+                decodedData = data.map(function (d) { return util.decodeString(d); });
+            }
+            catch (_a) {
+                throw new Error('Failed to decode encoded string bytes into utf-8');
+            }
+        }
+        return ops_1.buffer(t.shape, t.dtype, decodedData);
     };
     MathBackendCPU.prototype.disposeData = function (dataId) {
         if (this.data.has(dataId)) {

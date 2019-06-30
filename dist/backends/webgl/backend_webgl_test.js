@@ -55,8 +55,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var tf = require("../../index");
 var jasmine_util_1 = require("../../jasmine_util");
 var test_util_1 = require("../../test_util");
+var util_1 = require("../../util");
 var backend_webgl_1 = require("./backend_webgl");
 var backend_webgl_test_registry_1 = require("./backend_webgl_test_registry");
+function encodeStrings(a) {
+    return a.map(function (s) { return util_1.encodeString(s); });
+}
+function decodeStrings(bytes) {
+    return bytes.map(function (b) { return util_1.decodeString(b); });
+}
 jasmine_util_1.describeWithFlags('lazy packing and unpacking', backend_webgl_test_registry_1.WEBGL_ENVS, function () {
     var webglLazilyUnpackFlagSaved;
     var webglCpuForwardFlagSaved;
@@ -145,23 +152,23 @@ jasmine_util_1.describeWithFlags('backendWebGL', backend_webgl_test_registry_1.W
         tf.registerBackend('test-storage', function () { return backend; });
         tf.setBackend('test-storage');
         var t = tf.Tensor.make([3], {}, 'string');
-        backend.write(t.dataId, ['c', 'a', 'b']);
-        test_util_1.expectArraysEqual(backend.readSync(t.dataId), ['c', 'a', 'b']);
+        backend.write(t.dataId, encodeStrings(['c', 'a', 'b']));
+        test_util_1.expectArraysEqual(decodeStrings(backend.readSync(t.dataId)), ['c', 'a', 'b']);
     });
     it('register string tensor with values', function () {
         var backend = new backend_webgl_1.MathBackendWebGL();
         tf.registerBackend('test-storage', function () { return backend; });
         tf.setBackend('test-storage');
         var t = tf.Tensor.make([3], { values: ['a', 'b', 'c'] }, 'string');
-        test_util_1.expectArraysEqual(backend.readSync(t.dataId), ['a', 'b', 'c']);
+        test_util_1.expectArraysEqual(decodeStrings(backend.readSync(t.dataId)), ['a', 'b', 'c']);
     });
     it('register string tensor with values and overwrite', function () {
         var backend = new backend_webgl_1.MathBackendWebGL();
         tf.registerBackend('test-storage', function () { return backend; });
         tf.setBackend('test-storage');
         var t = tf.Tensor.make([3], { values: ['a', 'b', 'c'] }, 'string');
-        backend.write(t.dataId, ['c', 'a', 'b']);
-        test_util_1.expectArraysEqual(backend.readSync(t.dataId), ['c', 'a', 'b']);
+        backend.write(t.dataId, encodeStrings(['c', 'a', 'b']));
+        test_util_1.expectArraysEqual(decodeStrings(backend.readSync(t.dataId)), ['c', 'a', 'b']);
     });
     it('register string tensor with values and wrong shape throws error', function () {
         var backend = new backend_webgl_1.MathBackendWebGL();

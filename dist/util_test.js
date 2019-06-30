@@ -110,6 +110,24 @@ describe('Util', function () {
         var a = new Float32Array([1, 2, 3, 4, 5]);
         expect(tensor_util_env_1.inferShape(a)).toEqual([5]);
     });
+    it('infer shape of Uint8Array[], string tensor', function () {
+        var a = [new Uint8Array([1, 2]), new Uint8Array([3, 4])];
+        expect(tensor_util_env_1.inferShape(a, 'string')).toEqual([2]);
+    });
+    it('infer shape of Uint8Array[][], string tensor', function () {
+        var a = [
+            [new Uint8Array([1]), new Uint8Array([2])],
+            [new Uint8Array([1]), new Uint8Array([2])]
+        ];
+        expect(tensor_util_env_1.inferShape(a, 'string')).toEqual([2, 2]);
+    });
+    it('infer shape of Uint8Array[][][], string tensor', function () {
+        var a = [
+            [[new Uint8Array([1, 2])], [new Uint8Array([2, 1])]],
+            [[new Uint8Array([1, 2])], [new Uint8Array([2, 1])]]
+        ];
+        expect(tensor_util_env_1.inferShape(a, 'string')).toEqual([2, 2, 1]);
+    });
 });
 describe('util.flatten', function () {
     it('nested number arrays', function () {
@@ -131,12 +149,27 @@ describe('util.flatten', function () {
         var data = [new Float32Array([1, 2]), 3, [4, 5, new Float32Array([6, 7])]];
         expect(util.flatten(data)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     });
+    it('nested Uint8Arrays, skipTypedArray=true', function () {
+        var data = [
+            [new Uint8Array([1, 2]), new Uint8Array([3, 4])],
+            [new Uint8Array([5, 6]), new Uint8Array([7, 8])]
+        ];
+        expect(util.flatten(data, [], true)).toEqual([
+            new Uint8Array([1, 2]), new Uint8Array([3, 4]), new Uint8Array([5, 6]),
+            new Uint8Array([7, 8])
+        ]);
+    });
 });
+function encodeStrings(a) {
+    return a.map(function (s) { return util.encodeString(s); });
+}
 describe('util.bytesFromStringArray', function () {
-    it('count each character as 2 bytes', function () {
-        expect(util.bytesFromStringArray(['a', 'bb', 'ccc'])).toBe(6 * 2);
-        expect(util.bytesFromStringArray(['a', 'bb', 'cccddd'])).toBe(9 * 2);
-        expect(util.bytesFromStringArray(['даниел'])).toBe(6 * 2);
+    it('count bytes after utf8 encoding', function () {
+        expect(util.bytesFromStringArray(encodeStrings(['a', 'bb', 'ccc'])))
+            .toBe(6);
+        expect(util.bytesFromStringArray(encodeStrings(['a', 'bb', 'cccddd'])))
+            .toBe(9);
+        expect(util.bytesFromStringArray(encodeStrings(['даниел']))).toBe(6 * 2);
     });
 });
 describe('util.inferDtype', function () {
@@ -481,6 +514,46 @@ describe('util.fetch', function () {
         expect(environment_1.ENV.platform.fetch).toHaveBeenCalledWith('test/path', {
             method: 'GET'
         });
+    });
+});
+describe('util.encodeString', function () {
+    it('Encode an empty string, default encoding', function () {
+        var res = util.encodeString('');
+        expect(res).toEqual(new Uint8Array([]));
+    });
+    it('Encode an empty string, utf-8 encoding', function () {
+        var res = util.encodeString('', 'utf-8');
+        expect(res).toEqual(new Uint8Array([]));
+    });
+    it('Encode an empty string, encoding must be utf-8', function () {
+        expect(function () { return util.encodeString('', 'utf-16'); })
+            .toThrowError(/only supports utf-8, but got utf-16/);
+    });
+    it('Encode cyrillic letters', function () {
+        var res = util.encodeString('Kaкo стe');
+        expect(res).toEqual(new Uint8Array([75, 97, 208, 186, 111, 32, 209, 129, 209, 130, 101]));
+    });
+    it('Encode ascii letters', function () {
+        var res = util.encodeString('hello');
+        expect(res).toEqual(new Uint8Array([104, 101, 108, 108, 111]));
+    });
+});
+describe('util.decodeString', function () {
+    it('decode an empty string', function () {
+        var s = util.decodeString(new Uint8Array([]));
+        expect(s).toEqual('');
+    });
+    it('decode ascii', function () {
+        var s = util.decodeString(new Uint8Array([104, 101, 108, 108, 111]));
+        expect(s).toEqual('hello');
+    });
+    it('decode cyrillic', function () {
+        var s = util.decodeString(new Uint8Array([75, 97, 208, 186, 111, 32, 209, 129, 209, 130, 101]));
+        expect(s).toEqual('Kaкo стe');
+    });
+    it('decode utf-16', function () {
+        var s = util.decodeString(new Uint8Array([255, 254, 237, 139, 0, 138, 4, 89, 6, 116]), 'utf-16');
+        expect(s).toEqual('语言处理');
     });
 });
 //# sourceMappingURL=util_test.js.map

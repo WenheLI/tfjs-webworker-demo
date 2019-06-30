@@ -504,7 +504,7 @@ jasmine_util_1.describeWithFlags('memory', jasmine_util_1.ALL_ENVS, function () 
     it('string tensor', function () {
         var a = tf.tensor([['a', 'bb'], ['c', 'd']]);
         expect(tf.memory().numTensors).toBe(1);
-        expect(tf.memory().numBytes).toBe(10); // 5 letters, each 2 bytes.
+        expect(tf.memory().numBytes).toBe(5); // 5 letters, each 1 byte in utf8.
         a.dispose();
         expect(tf.memory().numTensors).toBe(0);
         expect(tf.memory().numBytes).toBe(0);

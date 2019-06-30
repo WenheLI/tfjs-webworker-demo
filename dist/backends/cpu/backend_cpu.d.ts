@@ -17,7 +17,7 @@
 import { Conv2DInfo, Conv3DInfo } from '../../ops/conv_util';
 import { Activation } from '../../ops/fused_util';
 import { DataId, Scalar, Tensor, Tensor1D, Tensor2D, Tensor3D, Tensor4D, Tensor5D } from '../../tensor';
-import { DataType, DataValues, PixelData, Rank, ShapeMap } from '../../types';
+import { BackendValues, DataType, PixelData, Rank, ShapeMap } from '../../types';
 import { BackendTimingInfo, KernelBackend } from '../backend';
 export declare class MathBackendCPU implements KernelBackend {
     blockSize: number;
@@ -26,10 +26,10 @@ export declare class MathBackendCPU implements KernelBackend {
     private firstUse;
     constructor();
     register(dataId: DataId, shape: number[], dtype: DataType): void;
-    write(dataId: DataId, values: DataValues): void;
+    write(dataId: DataId, values: BackendValues): void;
     fromPixels(pixels: PixelData | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement, numChannels: number): Tensor3D;
-    read(dataId: DataId): Promise<DataValues>;
-    readSync(dataId: DataId): DataValues;
+    read(dataId: DataId): Promise<BackendValues>;
+    readSync(dataId: DataId): BackendValues;
     private bufferSync;
     disposeData(dataId: DataId): void;
     time(f: () => void): Promise<BackendTimingInfo>;

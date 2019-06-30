@@ -17,7 +17,7 @@
 import { Conv2DInfo, Conv3DInfo } from '../ops/conv_util';
 import { Activation } from '../ops/fused_util';
 import { Backend, DataId, Scalar, Tensor, Tensor1D, Tensor2D, Tensor3D, Tensor4D, Tensor5D } from '../tensor';
-import { DataType, DataValues, PixelData, Rank, ShapeMap } from '../types';
+import { BackendValues, DataType, PixelData, Rank, ShapeMap } from '../types';
 export declare const EPSILON_FLOAT32 = 1e-7;
 export declare const EPSILON_FLOAT16 = 0.0001;
 export interface BackendTimingInfo {
@@ -25,10 +25,10 @@ export interface BackendTimingInfo {
     getExtraProfileInfo?(): string;
 }
 export interface TensorStorage {
-    read(dataId: DataId): Promise<DataValues>;
-    readSync(dataId: DataId): DataValues;
+    read(dataId: DataId): Promise<BackendValues>;
+    readSync(dataId: DataId): BackendValues;
     disposeData(dataId: DataId): void;
-    write(dataId: DataId, values: DataValues): void;
+    write(dataId: DataId, values: BackendValues): void;
     fromPixels(pixels: PixelData | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement, numChannels: number): Tensor3D;
     register(dataId: DataId, shape: number[], dtype: DataType): void;
     memory(): {
@@ -65,10 +65,10 @@ export interface BackendTimer {
  */
 export declare class KernelBackend implements TensorStorage, Backend, BackendTimer {
     time(f: () => void): Promise<BackendTimingInfo>;
-    read(dataId: object): Promise<DataValues>;
-    readSync(dataId: object): DataValues;
+    read(dataId: object): Promise<BackendValues>;
+    readSync(dataId: object): BackendValues;
     disposeData(dataId: object): void;
-    write(dataId: object, values: DataValues): void;
+    write(dataId: object, values: BackendValues): void;
     fromPixels(pixels: PixelData | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement, numChannels: number): Tensor<Rank.R3>;
     register(dataId: object, shape: number[], dtype: DataType): void;
     memory(): {

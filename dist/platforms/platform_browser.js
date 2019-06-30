@@ -19,15 +19,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
 var PlatformBrowser = /** @class */ (function () {
     function PlatformBrowser() {
-        // The built-in encoder and the decoder use UTF-8 encoding.
+        // According to the spec, the built-in encoder can do only UTF-8 encoding.
+        // https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/TextEncoder
         this.textEncoder = new TextEncoder();
-        this.textDecoder = new TextDecoder();
     }
-    PlatformBrowser.prototype.encodeUTF8 = function (text) {
+    PlatformBrowser.prototype.encode = function (text, encoding) {
+        if (encoding !== 'utf-8' && encoding !== 'utf8') {
+            throw new Error("Browser's encoder only supports utf-8, but got " + encoding);
+        }
         return this.textEncoder.encode(text);
     };
-    PlatformBrowser.prototype.decodeUTF8 = function (bytes) {
-        return this.textDecoder.decode(bytes);
+    PlatformBrowser.prototype.decode = function (bytes, encoding) {
+        return new TextDecoder(encoding).decode(bytes);
     };
     PlatformBrowser.prototype.fetch = function (path, init) {
         return fetch(path, init);

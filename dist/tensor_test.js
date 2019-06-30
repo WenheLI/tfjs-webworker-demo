@@ -56,6 +56,20 @@ var tf = require("./index");
 var jasmine_util_1 = require("./jasmine_util");
 var tensor_1 = require("./tensor");
 var test_util_1 = require("./test_util");
+var util_1 = require("./util");
+/** Private method used by these tests. Encodes strings into utf-8 bytes. */
+function encodeStrings(a) {
+    for (var i = 0; i < a.length; i++) {
+        var val = a[i];
+        if (Array.isArray(val)) {
+            encodeStrings(val);
+        }
+        else {
+            a[i] = util_1.encodeString(val);
+        }
+    }
+    return a;
+}
 jasmine_util_1.describeWithFlags('tensor', jasmine_util_1.ALL_ENVS, function () {
     it('Tensors of arbitrary size', function () { return __awaiter(_this, void 0, void 0, function () {
         var t, _a, _b, _c;
@@ -439,6 +453,35 @@ jasmine_util_1.describeWithFlags('tensor', jasmine_util_1.ALL_ENVS, function () 
             }
         });
     }); });
+    it('tf.tensor1d() from encoded strings', function () { return __awaiter(_this, void 0, void 0, function () {
+        var bytes, a, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    bytes = encodeStrings(['aa', 'bb', 'cc']);
+                    a = tf.tensor1d(bytes, 'string');
+                    expect(a.dtype).toBe('string');
+                    expect(a.shape).toEqual([3]);
+                    _a = test_util_1.expectArraysEqual;
+                    return [4 /*yield*/, a.data()];
+                case 1:
+                    _a.apply(void 0, [_b.sent(), ['aa', 'bb', 'cc']]);
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    it('tf.tensor1d() from encoded strings without dtype errors', function () { return __awaiter(_this, void 0, void 0, function () {
+        var bytes;
+        return __generator(this, function (_a) {
+            bytes = encodeStrings(['aa', 'bb', 'cc']);
+            expect(function () { return tf.tensor1d(bytes); }).toThrowError();
+            return [2 /*return*/];
+        });
+    }); });
+    it('tf.tensor1d() from encoded strings, shape mismatch', function () {
+        var bytes = encodeStrings([['aa'], ['bb'], ['cc']]);
+        expect(function () { return tf.tensor1d(bytes); }).toThrowError();
+    });
     it('tf.tensor1d() from number[][], shape mismatch', function () {
         // tslint:disable-next-line:no-any
         expect(function () { return tf.tensor1d([[1], [2], [3]]); }).toThrowError();
@@ -477,6 +520,35 @@ jasmine_util_1.describeWithFlags('tensor', jasmine_util_1.ALL_ENVS, function () 
             }
         });
     }); });
+    it('tf.tensor2d() from encoded strings', function () { return __awaiter(_this, void 0, void 0, function () {
+        var bytes, a, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    bytes = encodeStrings([['aa', 'bb'], ['cc', 'dd']]);
+                    a = tf.tensor2d(bytes, [2, 2], 'string');
+                    expect(a.dtype).toBe('string');
+                    expect(a.shape).toEqual([2, 2]);
+                    _a = test_util_1.expectArraysEqual;
+                    return [4 /*yield*/, a.data()];
+                case 1:
+                    _a.apply(void 0, [_b.sent(), ['aa', 'bb', 'cc', 'dd']]);
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    it('tf.tensor2d() from encoded strings without dtype errors', function () { return __awaiter(_this, void 0, void 0, function () {
+        var bytes;
+        return __generator(this, function (_a) {
+            bytes = encodeStrings([['aa', 'bb'], ['cc', 'dd']]);
+            expect(function () { return tf.tensor2d(bytes); }).toThrowError();
+            return [2 /*return*/];
+        });
+    }); });
+    it('tf.tensor2d() from encoded strings, shape mismatch', function () {
+        var bytes = encodeStrings([['aa', 'bb'], ['cc', 'dd']]);
+        expect(function () { return tf.tensor2d(bytes, [3, 2], 'string'); }).toThrowError();
+    });
     it('tf.tensor2d() requires shape to be of length 2', function () {
         // tslint:disable-next-line:no-any
         var shape = [4];
@@ -533,6 +605,37 @@ jasmine_util_1.describeWithFlags('tensor', jasmine_util_1.ALL_ENVS, function () 
             }
         });
     }); });
+    it('tf.tensor3d() from encoded strings', function () { return __awaiter(_this, void 0, void 0, function () {
+        var bytes, a, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    bytes = encodeStrings([[['a'], ['b'], ['c']], [['d'], ['e'], ['f']]]);
+                    a = tf.tensor3d(bytes, [2, 3, 1], 'string');
+                    expect(a.dtype).toBe('string');
+                    expect(a.shape).toEqual([2, 3, 1]);
+                    _a = test_util_1.expectArraysEqual;
+                    return [4 /*yield*/, a.data()];
+                case 1:
+                    _a.apply(void 0, [_b.sent(), ['a', 'b', 'c', 'd', 'e', 'f']]);
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    it('tf.tensor3d() from encoded strings without dtype errors', function () { return __awaiter(_this, void 0, void 0, function () {
+        var bytes;
+        return __generator(this, function (_a) {
+            bytes = encodeStrings([[['a'], ['b'], ['c']], [['d'], ['e'], ['f']]]);
+            expect(function () { return tf.tensor3d(bytes); }).toThrowError();
+            return [2 /*return*/];
+        });
+    }); });
+    it('tf.tensor3d() from encoded strings, shape mismatch', function () {
+        var bytes = encodeStrings([[['a'], ['b'], ['c']], [['d'], ['e'], ['f']]]);
+        // Actual shape is [2, 3, 1].
+        expect(function () { return tf.tensor3d(bytes, [3, 2, 1], 'string'); })
+            .toThrowError();
+    });
     it('tensor3d() from number[][][], but shape does not match', function () {
         var values = [[[1], [2], [3]], [[4], [5], [6]]];
         // Actual shape is [2, 3, 1].
@@ -582,6 +685,37 @@ jasmine_util_1.describeWithFlags('tensor', jasmine_util_1.ALL_ENVS, function () 
             }
         });
     }); });
+    it('tf.tensor4d() from encoded strings', function () { return __awaiter(_this, void 0, void 0, function () {
+        var bytes, a, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    bytes = encodeStrings([[[['a']], [['b']]], [[['c']], [['d']]]]);
+                    a = tf.tensor4d(bytes, [2, 2, 1, 1], 'string');
+                    expect(a.dtype).toBe('string');
+                    expect(a.shape).toEqual([2, 2, 1, 1]);
+                    _a = test_util_1.expectArraysEqual;
+                    return [4 /*yield*/, a.data()];
+                case 1:
+                    _a.apply(void 0, [_b.sent(), ['a', 'b', 'c', 'd']]);
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    it('tf.tensor4d() from encoded strings without dtype errors', function () { return __awaiter(_this, void 0, void 0, function () {
+        var bytes;
+        return __generator(this, function (_a) {
+            bytes = encodeStrings([[[['a']], [['b']]], [[['c']], [['d']]]]);
+            expect(function () { return tf.tensor4d(bytes); }).toThrowError();
+            return [2 /*return*/];
+        });
+    }); });
+    it('tf.tensor4d() from encoded strings, shape mismatch', function () {
+        var bytes = encodeStrings([[[['a']], [['b']]], [[['c']], [['d']]]]);
+        // Actual shape is [2, 2, 1. 1].
+        expect(function () { return tf.tensor4d(bytes, [2, 1, 2, 1], 'string'); })
+            .toThrowError();
+    });
     it('tensor4d() from string[][][][] infer shape', function () { return __awaiter(_this, void 0, void 0, function () {
         var vals, a, _a;
         return __generator(this, function (_b) {
@@ -1638,6 +1772,37 @@ jasmine_util_1.describeWithFlags('tensor', jasmine_util_1.ALL_ENVS, function () 
         expect(b.dtype).toBe('string');
         expect(b.shape).toEqual([1, 1]);
     });
+    it('scalar from encoded string', function () { return __awaiter(_this, void 0, void 0, function () {
+        var a, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    a = tf.scalar(util_1.encodeString('hello'), 'string');
+                    expect(a.dtype).toBe('string');
+                    expect(a.shape).toEqual([]);
+                    _a = test_util_1.expectArraysEqual;
+                    return [4 /*yield*/, a.data()];
+                case 1:
+                    _a.apply(void 0, [_b.sent(), ['hello']]);
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    it('scalar from encoded string, but missing dtype', function () { return __awaiter(_this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            // We do not want to infer 'string' when the user passes Uint8Array in order
+            // to be forward compatible in the future when we add uint8 dtype.
+            expect(function () { return tf.scalar(util_1.encodeString('hello')); }).toThrowError();
+            return [2 /*return*/];
+        });
+    }); });
+    it('scalar from encoded string, but value is not uint8array', function () { return __awaiter(_this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            // tslint:disable-next-line:no-any
+            expect(function () { return tf.scalar(new Float32Array([1, 2, 3])); }).toThrowError();
+            return [2 /*return*/];
+        });
+    }); });
     it('Scalar inferred dtype from bool', function () { return __awaiter(_this, void 0, void 0, function () {
         var a, _a;
         return __generator(this, function (_b) {
@@ -3236,6 +3401,86 @@ jasmine_util_1.describeWithFlags('tensor with 0 in shape', jasmine_util_1.ALL_EN
                     return [4 /*yield*/, a.data()];
                 case 1:
                     _a.apply(void 0, [_b.sent(), []]);
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+});
+jasmine_util_1.describeWithFlags('tensor.bytes()', jasmine_util_1.ALL_ENVS, function () {
+    /** Helper method to get the bytes from a typed array. */
+    function getBytes(a) {
+        return new Uint8Array(a.buffer);
+    }
+    it('float32 tensor', function () { return __awaiter(_this, void 0, void 0, function () {
+        var a, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    a = tf.tensor([1.1, 3.2, 7], [3], 'float32');
+                    _a = expect;
+                    return [4 /*yield*/, a.bytes()];
+                case 1:
+                    _a.apply(void 0, [_b.sent()]).toEqual(getBytes(new Float32Array([1.1, 3.2, 7])));
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    it('int32 tensor', function () { return __awaiter(_this, void 0, void 0, function () {
+        var a, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    a = tf.tensor([1.1, 3.2, 7], [3], 'int32');
+                    _a = expect;
+                    return [4 /*yield*/, a.bytes()];
+                case 1:
+                    _a.apply(void 0, [_b.sent()]).toEqual(getBytes(new Int32Array([1, 3, 7])));
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    it('bool tensor', function () { return __awaiter(_this, void 0, void 0, function () {
+        var a, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    a = tf.tensor([true, true, false], [3], 'bool');
+                    _a = expect;
+                    return [4 /*yield*/, a.bytes()];
+                case 1:
+                    _a.apply(void 0, [_b.sent()]).toEqual(new Uint8Array([1, 1, 0]));
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    it('string tensor from native strings', function () { return __awaiter(_this, void 0, void 0, function () {
+        var a, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    a = tf.tensor(['hello', 'world'], [2], 'string');
+                    _a = expect;
+                    return [4 /*yield*/, a.bytes()];
+                case 1:
+                    _a.apply(void 0, [_b.sent()]).toEqual([
+                        util_1.encodeString('hello'), util_1.encodeString('world')
+                    ]);
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    it('string tensor from encoded bytes', function () { return __awaiter(_this, void 0, void 0, function () {
+        var a, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    a = tf.tensor([util_1.encodeString('hello'), util_1.encodeString('world')], [2], 'string');
+                    _a = expect;
+                    return [4 /*yield*/, a.bytes()];
+                case 1:
+                    _a.apply(void 0, [_b.sent()]).toEqual([
+                        util_1.encodeString('hello'), util_1.encodeString('world')
+                    ]);
                     return [2 /*return*/];
             }
         });

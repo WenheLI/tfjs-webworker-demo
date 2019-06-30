@@ -24,20 +24,23 @@ exports.getNodeFetch = {
 };
 var PlatformNode = /** @class */ (function () {
     function PlatformNode() {
-        // tslint:disable-next-line: no-require-imports
-        var util = require('util');
-        // The built-in encoder and the decoder use UTF-8 encoding.
-        this.textEncoder = new util.TextEncoder();
-        this.textDecoder = new util.TextDecoder();
+        // tslint:disable-next-line:no-require-imports
+        this.util = require('util');
+        // According to the spec, the built-in encoder can do only UTF-8 encoding.
+        // https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/TextEncoder
+        this.textEncoder = new this.util.TextEncoder();
     }
-    PlatformNode.prototype.encodeUTF8 = function (text) {
+    PlatformNode.prototype.encode = function (text, encoding) {
+        if (encoding !== 'utf-8' && encoding !== 'utf8') {
+            throw new Error("Node built-in encoder only supports utf-8, but got " + encoding);
+        }
         return this.textEncoder.encode(text);
     };
-    PlatformNode.prototype.decodeUTF8 = function (bytes) {
+    PlatformNode.prototype.decode = function (bytes, encoding) {
         if (bytes.length === 0) {
             return '';
         }
-        return this.textDecoder.decode(bytes);
+        return new this.util.TextDecoder(encoding).decode(bytes);
     };
     PlatformNode.prototype.fetch = function (path, requestInits) {
         if (environment_1.ENV.global.fetch != null) {

@@ -19,7 +19,7 @@ import { Environment } from './environment';
 import { TapeNode } from './tape';
 import { DataId, Tensor, Tensor3D, TensorTracker, Variable } from './tensor';
 import { GradSaveFunc, NamedTensorMap, NamedVariableMap, TensorContainer } from './tensor_types';
-import { DataValues, PixelData } from './types';
+import { BackendValues, PixelData } from './types';
 /**
  * A function that computes an output. The save function is for saving tensors
  * computed in the forward pass, that we need in the backward pass.
@@ -186,9 +186,9 @@ export declare class Engine implements TensorManager, TensorTracker, DataMover {
         grads: Tensor[];
     };
     customGrad<T extends Tensor>(f: CustomGradientFunc<T>): (...args: Array<Tensor | GradSaveFunc>) => T;
-    write(destBackend: KernelBackend, dataId: DataId, values: DataValues): void;
-    readSync(dataId: DataId): DataValues;
-    read(dataId: DataId): Promise<DataValues>;
+    write(destBackend: KernelBackend, dataId: DataId, values: BackendValues): void;
+    readSync(dataId: DataId): BackendValues;
+    read(dataId: DataId): Promise<BackendValues>;
     fromPixels(pixels: PixelData | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement, numChannels: number): Tensor3D;
     time(query: () => void): Promise<TimingInfo>;
     /**

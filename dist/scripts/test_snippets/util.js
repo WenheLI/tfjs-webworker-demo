@@ -54,6 +54,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var fs = require("fs");
 var path = require("path");
 var ts = require("typescript");
+process.on('unhandledRejection', function (ex) {
+    throw ex;
+});
 // Used for logging the number of snippets that have been found.
 var snippetCount = 0;
 // Used for counting the number of errors that have been found.

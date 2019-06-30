@@ -98,6 +98,6 @@ export declare type Conv3DInfo = {
  * operation.
  */
 export declare function computeConv3DInfo(inShape: [number, number, number, number, number], filterShape: [number, number, number, number, number], strides: number | [number, number, number], dilations: number | [number, number, number], pad: 'same' | 'valid', depthwise?: boolean, dataFormat?: 'channelsFirst' | 'channelsLast'): Conv3DInfo;
-export declare function computeDefaultPad(inputShape: [number, number, number], fieldSize: number, stride: number, dilation?: number): number;
+export declare function computeDefaultPad(inputShape: [number, number], fieldSize: number, stride: number, dilation?: number): number;
 export declare function tupleValuesAreOne(param: number | [number, number]): boolean;
 export declare function eitherStridesOrDilationsAreOne(strides: number | [number, number], dilations: number | [number, number]): boolean;

@@ -57,6 +57,7 @@ var jasmine_util_1 = require("../jasmine_util");
 var ops_1 = require("../ops/ops");
 var test_util_1 = require("../test_util");
 var test_util_2 = require("../test_util");
+var util_1 = require("../util");
 var io_utils_1 = require("./io_utils");
 describe('concatenateTypedArrays', function () {
     it('Single float arrays', function () {
@@ -386,7 +387,7 @@ describe('encodeWeights', function () {
         });
     }); });
     it('String tensors', function () { return __awaiter(_this, void 0, void 0, function () {
-        var tensors, dataAndSpecs, data, specs, x1ByteLength, x2ByteLength, x3ByteLength, x4ByteLength, x5ByteLength, delim;
+        var tensors, dataAndSpecs, data, specs, x1ByteLength, x2ByteLength, x3ByteLength, x4ByteLength, x5ByteLength;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -402,63 +403,46 @@ describe('encodeWeights', function () {
                     dataAndSpecs = _a.sent();
                     data = dataAndSpecs.data;
                     specs = dataAndSpecs.specs;
-                    x1ByteLength = 7 + 3;
-                    x2ByteLength = 0;
-                    x3ByteLength = 13 * 2 + 1;
-                    x4ByteLength = 6;
-                    x5ByteLength = 5;
+                    x1ByteLength = 7 + 4 * 4;
+                    x2ByteLength = 4;
+                    x3ByteLength = 13 * 2 + 2 * 4;
+                    x4ByteLength = 6 + 1 * 4;
+                    x5ByteLength = 5 + 1 * 4;
                     expect(data.byteLength)
                         .toEqual(x1ByteLength + x2ByteLength + x3ByteLength + x4ByteLength +
                         x5ByteLength);
-                    delim = specs[0].delimiter;
-                    expect(new Uint8Array(data, 0, x1ByteLength))
-                        .toEqual(tf.ENV.platform.encodeUTF8("a" + delim + "bc" + delim + "def" + delim + "g"));
-                    // The middle string takes up 0 bytes.
-                    delim = specs[2].delimiter;
-                    expect(new Uint8Array(data, x1ByteLength + x2ByteLength, x3ByteLength))
-                        .toEqual(tf.ENV.platform.encodeUTF8("\u0437\u0434\u0440\u0430\u0432\u043E" + delim + "\u043F\u043E\u0437\u0434\u0440\u0430\u0432"));
-                    delim = specs[3].delimiter;
-                    expect(new Uint8Array(data, x1ByteLength + x2ByteLength + x3ByteLength, x4ByteLength))
-                        .toEqual(tf.ENV.platform.encodeUTF8('正常'));
-                    delim = specs[4].delimiter;
-                    expect(new Uint8Array(data, x1ByteLength + x2ByteLength + x3ByteLength + x4ByteLength, x5ByteLength))
-                        .toEqual(tf.ENV.platform.encodeUTF8('hello'));
+                    // x1 'a'.
+                    expect(new Uint32Array(data, 0, 1)[0]).toBe(1);
+                    expect(new Uint8Array(data, 4, 1)).toEqual(util_1.encodeString('a'));
+                    // x1 'bc'.
+                    expect(new Uint32Array(data.slice(5, 9))[0]).toBe(2);
+                    expect(new Uint8Array(data, 9, 2)).toEqual(util_1.encodeString('bc'));
+                    // x1 'def'.
+                    expect(new Uint32Array(data.slice(11, 15))[0]).toBe(3);
+                    expect(new Uint8Array(data, 15, 3)).toEqual(util_1.encodeString('def'));
+                    // x1 'g'.
+                    expect(new Uint32Array(data.slice(18, 22))[0]).toBe(1);
+                    expect(new Uint8Array(data, 22, 1)).toEqual(util_1.encodeString('g'));
+                    // x2 is empty string.
+                    expect(new Uint32Array(data.slice(23, 27))[0]).toBe(0);
+                    // x3 'здраво'.
+                    expect(new Uint32Array(data.slice(27, 31))[0]).toBe(12);
+                    expect(new Uint8Array(data, 31, 12)).toEqual(util_1.encodeString('здраво'));
+                    // x3 'поздрав'.
+                    expect(new Uint32Array(data.slice(43, 47))[0]).toBe(14);
+                    expect(new Uint8Array(data, 47, 14)).toEqual(util_1.encodeString('поздрав'));
+                    // x4 '正常'.
+                    expect(new Uint32Array(data.slice(61, 65))[0]).toBe(6);
+                    expect(new Uint8Array(data, 65, 6)).toEqual(util_1.encodeString('正常'));
+                    // x5 'hello'.
+                    expect(new Uint32Array(data.slice(71, 75))[0]).toBe(5);
+                    expect(new Uint8Array(data, 75, 5)).toEqual(util_1.encodeString('hello'));
                     expect(specs).toEqual([
-                        {
-                            name: 'x1',
-                            dtype: 'string',
-                            shape: [2, 2],
-                            byteLength: x1ByteLength,
-                            delimiter: io_utils_1.STRING_DELIMITER,
-                        },
-                        {
-                            name: 'x2',
-                            dtype: 'string',
-                            shape: [],
-                            byteLength: x2ByteLength,
-                            delimiter: io_utils_1.STRING_DELIMITER,
-                        },
-                        {
-                            name: 'x3',
-                            dtype: 'string',
-                            shape: [2],
-                            byteLength: x3ByteLength,
-                            delimiter: io_utils_1.STRING_DELIMITER,
-                        },
-                        {
-                            name: 'x4',
-                            dtype: 'string',
-                            shape: [],
-                            byteLength: x4ByteLength,
-                            delimiter: io_utils_1.STRING_DELIMITER,
-                        },
-                        {
-                            name: 'x5',
-                            dtype: 'string',
-                            shape: [],
-                            byteLength: x5ByteLength,
-                            delimiter: io_utils_1.STRING_DELIMITER,
-                        }
+                        { name: 'x1', dtype: 'string', shape: [2, 2] },
+                        { name: 'x2', dtype: 'string', shape: [] },
+                        { name: 'x3', dtype: 'string', shape: [2] },
+                        { name: 'x4', dtype: 'string', shape: [] },
+                        { name: 'x5', dtype: 'string', shape: [] }
                     ]);
                     return [2 /*return*/];
             }
@@ -509,7 +493,7 @@ describe('encodeWeights', function () {
 });
 jasmine_util_1.describeWithFlags('decodeWeights', {}, function () {
     it('Mixed dtype tensors', function () { return __awaiter(_this, void 0, void 0, function () {
-        var tensors, dataAndSpecs, data, specs, x4Bytes, x5Bytes, x6Bytes, decoded, _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
+        var tensors, dataAndSpecs, data, specs, decoded, _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
         return __generator(this, function (_q) {
             switch (_q.label) {
                 case 0:
@@ -527,11 +511,6 @@ jasmine_util_1.describeWithFlags('decodeWeights', {}, function () {
                     dataAndSpecs = _q.sent();
                     data = dataAndSpecs.data;
                     specs = dataAndSpecs.specs;
-                    x4Bytes = 12 + 3 + 3;
-                    x5Bytes = 0;
-                    x6Bytes = 5;
-                    expect(data.byteLength)
-                        .toEqual(4 * 4 + 4 * 1 + 1 * 3 + x4Bytes + x5Bytes + x6Bytes + 4 * 3);
                     decoded = tf.io.decodeWeights(data, specs);
                     expect(Object.keys(decoded).length).toEqual(7);
                     _a = test_util_1.expectArraysEqual;

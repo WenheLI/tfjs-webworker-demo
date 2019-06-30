@@ -23,6 +23,7 @@ export * from '../ops/broadcast_util';
 export * from '../ops/concat_util';
 export * from '../ops/conv_util';
 export { TypedArray, upcastType, PixelData } from '../types';
+export { MemoryInfo, TimingInfo } from '../engine';
 export declare function castTensor<T extends Tensor>(x: T, dtype: DataType, backend: KernelBackend): T;
 export declare function reshapeTensor<T extends Tensor, R extends Rank>(x: T, shape: ShapeMap[R]): Tensor<R>;
 export declare function linspaceImpl(start: number, stop: number, num: number): Tensor<Rank.R1>;

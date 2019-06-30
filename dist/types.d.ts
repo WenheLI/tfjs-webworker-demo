@@ -52,7 +52,10 @@ export interface SingleValueMap {
 export declare type DataType = keyof DataTypeMap;
 export declare type NumericDataType = 'float32' | 'int32' | 'bool' | 'complex64';
 export declare type TypedArray = Float32Array | Int32Array | Uint8Array;
+/** Tensor data used in tensor creation and user-facing API. */
 export declare type DataValues = DataTypeMap[DataType];
+/** The underlying tensor data that gets stored in a backend. */
+export declare type BackendValues = Float32Array | Int32Array | Uint8Array | Uint8Array[];
 export declare enum Rank {
     R0 = "R0",
     R1 = "R1",
@@ -71,20 +74,20 @@ export declare function upcastType(typeA: DataType, typeB: DataType): DataType;
 /** Returns the output type after summation. */
 export declare function sumOutType(type: DataType): DataType;
 /** @docalias TypedArray|Array */
-export declare type TensorLike = TypedArray | number | boolean | string | RecursiveArray<number | number[] | TypedArray> | RecursiveArray<boolean> | RecursiveArray<string>;
-export declare type ScalarLike = number | boolean | string;
+export declare type TensorLike = TypedArray | number | boolean | string | RecursiveArray<number | number[] | TypedArray> | RecursiveArray<boolean> | RecursiveArray<string> | Uint8Array[];
+export declare type ScalarLike = number | boolean | string | Uint8Array;
 /** @docalias TypedArray|Array */
-export declare type TensorLike1D = TypedArray | number[] | boolean[] | string[];
+export declare type TensorLike1D = TypedArray | number[] | boolean[] | string[] | Uint8Array[];
 /** @docalias TypedArray|Array */
-export declare type TensorLike2D = TypedArray | number[] | number[][] | boolean[] | boolean[][] | string[] | string[][];
+export declare type TensorLike2D = TypedArray | number[] | number[][] | boolean[] | boolean[][] | string[] | string[][] | Uint8Array[] | Uint8Array[][];
 /** @docalias TypedArray|Array */
-export declare type TensorLike3D = TypedArray | number[] | number[][][] | boolean[] | boolean[][][] | string[] | string[][][];
+export declare type TensorLike3D = TypedArray | number[] | number[][][] | boolean[] | boolean[][][] | string[] | string[][][] | Uint8Array[] | Uint8Array[][][];
 /** @docalias TypedArray|Array */
-export declare type TensorLike4D = TypedArray | number[] | number[][][][] | boolean[] | boolean[][][][] | string[] | string[][][][];
+export declare type TensorLike4D = TypedArray | number[] | number[][][][] | boolean[] | boolean[][][][] | string[] | string[][][][] | Uint8Array[] | Uint8Array[][][][];
 /** @docalias TypedArray|Array */
-export declare type TensorLike5D = TypedArray | number[] | number[][][][][] | boolean[] | boolean[][][][][] | string[] | string[][][][][];
+export declare type TensorLike5D = TypedArray | number[] | number[][][][][] | boolean[] | boolean[][][][][] | string[] | string[][][][][] | Uint8Array[] | Uint8Array[][][][][];
 /** @docalias TypedArray|Array */
-export declare type TensorLike6D = TypedArray | number[] | number[][][][][][] | boolean[] | boolean[][][][][][] | string[] | string[][][][][][];
+export declare type TensorLike6D = TypedArray | number[] | number[][][][][][] | boolean[] | boolean[][][][][][] | string[] | string[][][][][][] | Uint8Array[] | Uint8Array[][][][][];
 /** Type for representing image dat in Uint8Array type. */
 export interface PixelData {
     width: number;

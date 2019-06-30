@@ -363,16 +363,19 @@
      *
      *  @param arr The nested array to flatten.
      *  @param result The destination array which holds the elements.
+     *  @param skipTypedArray If true, avoids flattening the typed arrays. Defaults
+     *      to false.
      */
     /** @doc {heading: 'Util', namespace: 'util'} */
-    function flatten(arr, result) {
+    function flatten(arr, result, skipTypedArray) {
         if (result === void 0) { result = []; }
+        if (skipTypedArray === void 0) { skipTypedArray = false; }
         if (result == null) {
             result = [];
         }
-        if (Array.isArray(arr) || isTypedArray(arr)) {
+        if (Array.isArray(arr) || isTypedArray(arr) && !skipTypedArray) {
             for (var i = 0; i < arr.length; ++i) {
-                flatten(arr[i], result);
+                flatten(arr[i], result, skipTypedArray);
             }
         }
         else {
@@ -673,7 +676,7 @@
             return 0;
         }
         var bytes = 0;
-        arr.forEach(function (x) { return bytes += x.length * 2; });
+        arr.forEach(function (x) { return bytes += x.length; });
         return bytes;
     }
     /** Returns true if the value is a string. */
@@ -873,6 +876,31 @@
     function fetch$1(path, requestInits) {
         return exports.ENV.platform.fetch(path, requestInits);
     }
+    /**
+     * Encodes the provided string into bytes using the provided encoding scheme.
+     *
+     * @param s The string to encode.
+     * @param encoding The encoding scheme. Defaults to utf-8.
+     *
+     */
+    /** @doc {heading: 'Util'} */
+    function encodeString(s, encoding) {
+        if (encoding === void 0) { encoding = 'utf-8'; }
+        encoding = encoding || 'utf-8';
+        return exports.ENV.platform.encode(s, encoding);
+    }
+    /**
+     * Decodes the provided bytes into a string using the provided encoding scheme.
+     * @param bytes The bytes to decode.
+     *
+     * @param encoding The encoding scheme. Defaults to utf-8.
+     */
+    /** @doc {heading: 'Util'} */
+    function decodeString(bytes, encoding) {
+        if (encoding === void 0) { encoding = 'utf-8'; }
+        encoding = encoding || 'utf-8';
+        return exports.ENV.platform.decode(bytes, encoding);
+    }
 
     var util = /*#__PURE__*/Object.freeze({
         shuffle: shuffle,
@@ -919,7 +947,9 @@
         makeZerosTypedArray: makeZerosTypedArray,
         now: now,
         assertNonNegativeIntegerDimensions: assertNonNegativeIntegerDimensions,
-        fetch: fetch$1
+        fetch: fetch$1,
+        encodeString: encodeString,
+        decodeString: decodeString
     });
 
     /**
@@ -1336,7 +1366,12 @@
          * a flat array.
          */
         Tensor.make = function (shape, data, dtype, backend) {
-            return new Tensor(shape, dtype, data.values, data.dataId, backend);
+            var backendVals = data.values;
+            if (data.values != null && dtype === 'string' &&
+                isString(data.values[0])) {
+                backendVals = data.values.map(function (d) { return encodeString(d); });
+            }
+            return new Tensor(shape, dtype, backendVals, data.dataId, backend);
         };
         /** Flatten a Tensor to a 1D array. */
         /** @doc {heading: 'Tensors', subheading: 'Classes'} */
@@ -1477,9 +1512,26 @@
         /** @doc {heading: 'Tensors', subheading: 'Classes'} */
         Tensor.prototype.data = function () {
             return __awaiter(this, void 0, void 0, function () {
+                var data, bytes;
                 return __generator(this, function (_a) {
-                    this.throwIfDisposed();
-                    return [2 /*return*/, trackerFn().read(this.dataId)];
+                    switch (_a.label) {
+                        case 0:
+                            this.throwIfDisposed();
+                            data = trackerFn().read(this.dataId);
+                            if (!(this.dtype === 'string')) return [3 /*break*/, 2];
+                            return [4 /*yield*/, data];
+                        case 1:
+                            bytes = _a.sent();
+                            try {
+                                return [2 /*return*/, bytes.map(function (b) { return decodeString(b); })];
+                            }
+                            catch (_b) {
+                                throw new Error('Failed to decode the string bytes into utf-8. ' +
+                                    'To get the original bytes, call tensor.bytes().');
+                            }
+                            _a.label = 2;
+                        case 2: return [2 /*return*/, data];
+                    }
                 });
             });
         };
@@ -1490,7 +1542,39 @@
         /** @doc {heading: 'Tensors', subheading: 'Classes'} */
         Tensor.prototype.dataSync = function () {
             this.throwIfDisposed();
-            return trackerFn().readSync(this.dataId);
+            var data = trackerFn().readSync(this.dataId);
+            if (this.dtype === 'string') {
+                try {
+                    return data.map(function (b) { return decodeString(b); });
+                }
+                catch (_a) {
+                    throw new Error('Failed to decode the string bytes into utf-8. ' +
+                        'To get the original bytes, call tensor.bytes().');
+                }
+            }
+            return data;
+        };
+        /** Returns the underlying bytes of the tensor's data. */
+        Tensor.prototype.bytes = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var data;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            this.throwIfDisposed();
+                            return [4 /*yield*/, trackerFn().read(this.dataId)];
+                        case 1:
+                            data = _a.sent();
+                            if (this.dtype === 'string') {
+                                return [2 /*return*/, data];
+                            }
+                            else {
+                                return [2 /*return*/, new Uint8Array(data.buffer)];
+                            }
+                            return [2 /*return*/];
+                    }
+                });
+            });
         };
         /**
          * Disposes `tf.Tensor` from memory.
@@ -4582,16 +4666,17 @@
      * limitations under the License.
      * =============================================================================
      */
-    function inferShape(val) {
+    function inferShape(val, dtype) {
         var firstElem = val;
         if (isTypedArray(val)) {
-            return [val.length];
+            return dtype === 'string' ? [] : [val.length];
         }
         if (!Array.isArray(val)) {
             return []; // Scalar.
         }
         var shape = [];
-        while (Array.isArray(firstElem) || isTypedArray(firstElem)) {
+        while (Array.isArray(firstElem) ||
+            isTypedArray(firstElem) && dtype !== 'string') {
             shape.push(firstElem.length);
             firstElem = firstElem[0];
         }
@@ -4647,13 +4732,14 @@
             throw new Error("Argument '" + argName + "' passed to '" + functionName + "' must be a " +
                 ("Tensor or TensorLike, but got '" + type + "'"));
         }
-        var inferredShape = inferShape(x);
+        var inferredShape = inferShape(x, inferredDtype);
         if (!isTypedArray(x) && !Array.isArray(x)) {
             x = [x];
         }
+        var skipTypedArray = true;
         var values = inferredDtype !== 'string' ?
             toTypedArray(x, inferredDtype, exports.ENV.getBool('DEBUG')) :
-            flatten(x);
+            flatten(x, [], skipTypedArray);
         return Tensor.make(inferredShape, { values: values }, inferredDtype);
     }
     function convertToTensorArray(arg, argName, functionName, parseAsDtype) {
@@ -4978,14 +5064,15 @@
      * ```
      *
      * @param values The values of the tensor. Can be nested array of numbers,
-     *     or a flat array, or a `TypedArray`.
+     *     or a flat array, or a `TypedArray`. If the values are strings,
+     *     they will be encoded as utf-8 and kept as `Uint8Array[]`.
      * @param shape The shape of the tensor. Optional. If not provided,
      *   it is inferred from `values`.
      * @param dtype The data type.
      */
     /** @doc {heading: 'Tensors', subheading: 'Creation'} */
     function tensor(values, shape, dtype) {
-        var inferredShape = inferShape(values);
+        var inferredShape = inferShape(values, dtype);
         return makeTensor(values, shape, inferredShape, dtype);
     }
     /** This is shared code across all tensor creation methods. */
@@ -5027,7 +5114,7 @@
         shape = shape || inferredShape;
         values = dtype !== 'string' ?
             toTypedArray(values, dtype, exports.ENV.getBool('DEBUG')) :
-            flatten(values);
+            flatten(values, [], true);
         return Tensor.make(shape, { values: values }, dtype);
     }
     /**
@@ -5045,9 +5132,15 @@
      */
     /** @doc {heading: 'Tensors', subheading: 'Creation'} */
     function scalar(value, dtype) {
-        if ((isTypedArray(value) || Array.isArray(value)) && dtype !== 'complex64') {
+        if (((isTypedArray(value) && dtype !== 'string') || Array.isArray(value)) &&
+            dtype !== 'complex64') {
             throw new Error('Error creating a new Scalar: value must be a primitive ' +
                 '(number|boolean|string)');
+        }
+        if (dtype === 'string' && isTypedArray(value) &&
+            !(value instanceof Uint8Array)) {
+            throw new Error('When making a scalar from encoded string, ' +
+                'the value must be `Uint8Array`.');
         }
         var shape = [];
         var inferredShape = [];
@@ -5070,7 +5163,7 @@
     /** @doc {heading: 'Tensors', subheading: 'Creation'} */
     function tensor1d(values, dtype) {
         assertNonNull(values);
-        var inferredShape = inferShape(values);
+        var inferredShape = inferShape(values, dtype);
         if (inferredShape.length !== 1) {
             throw new Error('tensor1d() requires values to be a flat/TypedArray');
         }
@@ -5104,7 +5197,7 @@
         if (shape != null && shape.length !== 2) {
             throw new Error('tensor2d() requires shape to have two numbers');
         }
-        var inferredShape = inferShape(values);
+        var inferredShape = inferShape(values, dtype);
         if (inferredShape.length !== 2 && inferredShape.length !== 1) {
             throw new Error('tensor2d() requires values to be number[][] or flat/TypedArray');
         }
@@ -5141,7 +5234,7 @@
         if (shape != null && shape.length !== 3) {
             throw new Error('tensor3d() requires shape to have three numbers');
         }
-        var inferredShape = inferShape(values);
+        var inferredShape = inferShape(values, dtype);
         if (inferredShape.length !== 3 && inferredShape.length !== 1) {
             throw new Error('tensor3d() requires values to be number[][][] or flat/TypedArray');
         }
@@ -5178,7 +5271,7 @@
         if (shape != null && shape.length !== 4) {
             throw new Error('tensor4d() requires shape to have four numbers');
         }
-        var inferredShape = inferShape(values);
+        var inferredShape = inferShape(values, dtype);
         if (inferredShape.length !== 4 && inferredShape.length !== 1) {
             throw new Error('tensor4d() requires values to be number[][][][] or flat/TypedArray');
         }
@@ -5215,7 +5308,7 @@
         if (shape != null && shape.length !== 5) {
             throw new Error('tensor5d() requires shape to have five numbers');
         }
-        var inferredShape = inferShape(values);
+        var inferredShape = inferShape(values, dtype);
         if (inferredShape.length !== 5 && inferredShape.length !== 1) {
             throw new Error('tensor5d() requires values to be ' +
                 'number[][][][][] or flat/TypedArray');
@@ -5253,7 +5346,7 @@
         if (shape != null && shape.length !== 6) {
             throw new Error('tensor6d() requires shape to have six numbers');
         }
-        var inferredShape = inferShape(values);
+        var inferredShape = inferShape(values, dtype);
         if (inferredShape.length !== 6 && inferredShape.length !== 1) {
             throw new Error('tensor6d() requires values to be number[][][][][][] or ' +
                 'flat/TypedArray');
@@ -9326,7 +9419,7 @@
             filterShape: filterShape
         };
     }
-    function computeOutputShape3D(inShape, fieldSize, outDepth, stride, zeroPad, roundingMode) {
+    function computeOutputShape2D(inShape, fieldSize, stride, zeroPad, roundingMode) {
         if (zeroPad == null) {
             zeroPad = computeDefaultPad(inShape, fieldSize, stride);
         }
@@ -9338,7 +9431,7 @@
         var outputCols = conditionalRound((inputCols - fieldSize + 2 * zeroPad) / stride + 1, roundingMode);
         assert(isInt(outputCols), function () { return "The output # of columns (" + outputCols + ") must be an integer. " +
             "Change the stride and/or zero pad parameters"; });
-        return [outputRows, outputCols, outDepth];
+        return [outputRows, outputCols];
     }
     function computeDefaultPad(inputShape, fieldSize, stride, dilation) {
         if (dilation === void 0) { dilation = 1; }
@@ -9375,7 +9468,7 @@
         if (typeof pad === 'number') {
             var padType = (pad === 0) ? 'VALID' : 'NUMBER';
             padInfo = { top: pad, bottom: pad, left: pad, right: pad, type: padType };
-            var outShape = computeOutputShape3D([inHeight, inWidth, 1], filterHeight, 1, strideHeight, pad, roundingMode);
+            var outShape = computeOutputShape2D([inHeight, inWidth], filterHeight, strideHeight, pad, roundingMode);
             outHeight = outShape[0];
             outWidth = outShape[1];
         }
@@ -15009,9 +15102,7 @@
                 }
                 this.fromPixels2DContext.canvas.width = pixels.width;
                 this.fromPixels2DContext.canvas.height = pixels.height;
-                this.fromPixels2DContext.drawImage(
-                //@ts-ignore
-                pixels, 0, 0, pixels.width, pixels.height);
+                this.fromPixels2DContext.drawImage(pixels, 0, 0, pixels.width, pixels.height);
                 //@ts-ignore
                 pixels = this.fromPixels2DContext.canvas;
             }
@@ -15559,7 +15650,9 @@
         };
         MathBackendWebGL.prototype.tile = function (x, reps) {
             if (x.dtype === 'string') {
-                var buf = buffer(x.shape, x.dtype, this.readSync(x.dataId));
+                var data = this.readSync(x.dataId);
+                var decodedData = data.map(function (d) { return decodeString(d); });
+                var buf = buffer(x.shape, x.dtype, decodedData);
                 return tile$1(buf, reps);
             }
             var program = new TileProgram(x.shape, reps);
@@ -24087,9 +24180,7 @@
                 }
                 this.fromPixels2DContext.canvas.width = pixels.width;
                 this.fromPixels2DContext.canvas.height = pixels.height;
-                this.fromPixels2DContext.drawImage(
-                //@ts-ignore
-                pixels, 0, 0, pixels.width, pixels.height);
+                this.fromPixels2DContext.drawImage(pixels, 0, 0, pixels.width, pixels.height);
                 vals = this.fromPixels2DContext
                     .getImageData(0, 0, pixels.width, pixels.height)
                     .data;
@@ -24133,7 +24224,18 @@
             return this.data.get(dataId).values;
         };
         MathBackendCPU.prototype.bufferSync = function (t) {
-            return buffer(t.shape, t.dtype, this.readSync(t.dataId));
+            var data = this.readSync(t.dataId);
+            var decodedData = data;
+            if (t.dtype === 'string') {
+                try {
+                    // Decode the bytes into string.
+                    decodedData = data.map(function (d) { return decodeString(d); });
+                }
+                catch (_a) {
+                    throw new Error('Failed to decode encoded string bytes into utf-8');
+                }
+            }
+            return buffer(t.shape, t.dtype, decodedData);
         };
         MathBackendCPU.prototype.disposeData = function (dataId) {
             if (this.data.has(dataId)) {
@@ -26758,15 +26860,18 @@
      */
     var PlatformBrowser = /** @class */ (function () {
         function PlatformBrowser() {
-            // The built-in encoder and the decoder use UTF-8 encoding.
+            // According to the spec, the built-in encoder can do only UTF-8 encoding.
+            // https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/TextEncoder
             this.textEncoder = new TextEncoder();
-            this.textDecoder = new TextDecoder();
         }
-        PlatformBrowser.prototype.encodeUTF8 = function (text) {
+        PlatformBrowser.prototype.encode = function (text, encoding) {
+            if (encoding !== 'utf-8' && encoding !== 'utf8') {
+                throw new Error("Browser's encoder only supports utf-8, but got " + encoding);
+            }
             return this.textEncoder.encode(text);
         };
-        PlatformBrowser.prototype.decodeUTF8 = function (bytes) {
-            return this.textDecoder.decode(bytes);
+        PlatformBrowser.prototype.decode = function (bytes, encoding) {
+            return new TextDecoder(encoding).decode(bytes);
         };
         PlatformBrowser.prototype.fetch = function (path, init) {
             return fetch(path, init);
@@ -26801,20 +26906,23 @@
     var systemFetch;
     var PlatformNode = /** @class */ (function () {
         function PlatformNode() {
-            // tslint:disable-next-line: no-require-imports
-            var util = require('util');
-            // The built-in encoder and the decoder use UTF-8 encoding.
-            this.textEncoder = new util.TextEncoder();
-            this.textDecoder = new util.TextDecoder();
+            // tslint:disable-next-line:no-require-imports
+            this.util = require('util');
+            // According to the spec, the built-in encoder can do only UTF-8 encoding.
+            // https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/TextEncoder
+            this.textEncoder = new this.util.TextEncoder();
         }
-        PlatformNode.prototype.encodeUTF8 = function (text) {
+        PlatformNode.prototype.encode = function (text, encoding) {
+            if (encoding !== 'utf-8' && encoding !== 'utf8') {
+                throw new Error("Node built-in encoder only supports utf-8, but got " + encoding);
+            }
             return this.textEncoder.encode(text);
         };
-        PlatformNode.prototype.decodeUTF8 = function (bytes) {
+        PlatformNode.prototype.decode = function (bytes, encoding) {
             if (bytes.length === 0) {
                 return '';
             }
-            return this.textDecoder.decode(bytes);
+            return new this.util.TextDecoder(encoding).decode(bytes);
         };
         PlatformNode.prototype.fetch = function (path, requestInits) {
             if (exports.ENV.global.fetch != null) {
@@ -26875,8 +26983,8 @@
      * limitations under the License.
      * =============================================================================
      */
-    /** Used to delimit neighboring strings when encoding string tensors. */
-    var STRING_DELIMITER = '\x00';
+    /** Number of bytes reserved for the length of the string. (32bit integer). */
+    var NUM_BYTES_STRING_LENGTH = 4;
     /**
      * Encode a map from names to weight values as an ArrayBuffer, along with an
      * `Array` of `WeightsManifestEntry` as specification of the encoded weights.
@@ -26916,17 +27024,24 @@
                             var spec = { name: name_1, shape: t.shape, dtype: t.dtype };
                             if (t.dtype === 'string') {
                                 var utf8bytes = new Promise(function (resolve) { return __awaiter(_this, void 0, void 0, function () {
-                                    var stringSpec, data, bytes;
+                                    var vals, totalNumBytes, bytes, offset, i_1, val, bytesOfLength;
                                     return __generator(this, function (_a) {
                                         switch (_a.label) {
-                                            case 0:
-                                                stringSpec = spec;
-                                                return [4 /*yield*/, t.data()];
+                                            case 0: return [4 /*yield*/, t.bytes()];
                                             case 1:
-                                                data = _a.sent();
-                                                bytes = exports.ENV.platform.encodeUTF8(data.join(STRING_DELIMITER));
-                                                stringSpec.byteLength = bytes.length;
-                                                stringSpec.delimiter = STRING_DELIMITER;
+                                                vals = _a.sent();
+                                                totalNumBytes = vals.reduce(function (p, c) { return p + c.length; }, 0) +
+                                                    NUM_BYTES_STRING_LENGTH * vals.length;
+                                                bytes = new Uint8Array(totalNumBytes);
+                                                offset = 0;
+                                                for (i_1 = 0; i_1 < vals.length; i_1++) {
+                                                    val = vals[i_1];
+                                                    bytesOfLength = new Uint8Array(new Uint32Array([val.length]).buffer);
+                                                    bytes.set(bytesOfLength, offset);
+                                                    offset += NUM_BYTES_STRING_LENGTH;
+                                                    bytes.set(val, offset);
+                                                    offset += val.length;
+                                                }
                                                 resolve(bytes);
                                                 return [2 /*return*/];
                                         }
@@ -27002,10 +27117,15 @@
                 offset += size * quantizationSizeFactor;
             }
             else if (dtype === 'string') {
-                var stringSpec = spec;
-                var bytes = new Uint8Array(buffer.slice(offset, offset + stringSpec.byteLength));
-                values = exports.ENV.platform.decodeUTF8(bytes).split(stringSpec.delimiter);
-                offset += stringSpec.byteLength;
+                var size_1 = sizeFromShape(spec.shape);
+                values = [];
+                for (var i = 0; i < size_1; i++) {
+                    var byteLength = new Uint32Array(buffer.slice(offset, offset + NUM_BYTES_STRING_LENGTH))[0];
+                    offset += NUM_BYTES_STRING_LENGTH;
+                    var bytes = new Uint8Array(buffer.slice(offset, offset + byteLength));
+                    values.push(bytes);
+                    offset += byteLength;
+                }
             }
             else {
                 var dtypeFactor = DTYPE_VALUE_SIZE_MAP[dtype];
@@ -29778,7 +29898,7 @@
 
     /** @license See the LICENSE file. */
     // This code is auto-generated, do not modify this file!
-    var version = '1.2.1';
+    var version = '1.2.2';
 
     /**
      * @license

@@ -1,9 +1,8 @@
 import { Platform } from './platform';
 export declare class PlatformBrowser implements Platform {
     private textEncoder;
-    private textDecoder;
     constructor();
-    encodeUTF8(text: string): Uint8Array;
-    decodeUTF8(bytes: Uint8Array): string;
+    encode(text: string, encoding: string): Uint8Array;
+    decode(bytes: Uint8Array, encoding: string): string;
     fetch(path: string, init?: RequestInit): Promise<Response>;
 }

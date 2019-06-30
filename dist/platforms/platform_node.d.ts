@@ -5,9 +5,9 @@ export declare const getNodeFetch: {
 export declare let systemFetch: (url: string, init?: RequestInit) => Promise<Response>;
 export declare class PlatformNode implements Platform {
     private textEncoder;
-    private textDecoder;
+    util: any;
     constructor();
-    encodeUTF8(text: string): Uint8Array;
-    decodeUTF8(bytes: Uint8Array): string;
+    encode(text: string, encoding: string): Uint8Array;
+    decode(bytes: Uint8Array, encoding: string): string;
     fetch(path: string, requestInits?: RequestInit): Promise<Response>;
 }

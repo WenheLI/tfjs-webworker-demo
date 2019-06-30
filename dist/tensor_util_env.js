@@ -19,16 +19,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("./environment");
 var tensor_1 = require("./tensor");
 var util_1 = require("./util");
-function inferShape(val) {
+function inferShape(val, dtype) {
     var firstElem = val;
     if (util_1.isTypedArray(val)) {
-        return [val.length];
+        return dtype === 'string' ? [] : [val.length];
     }
     if (!Array.isArray(val)) {
         return []; // Scalar.
     }
     var shape = [];
-    while (Array.isArray(firstElem) || util_1.isTypedArray(firstElem)) {
+    while (Array.isArray(firstElem) ||
+        util_1.isTypedArray(firstElem) && dtype !== 'string') {
         shape.push(firstElem.length);
         firstElem = firstElem[0];
     }
@@ -85,13 +86,14 @@ function convertToTensor(x, argName, functionName, parseAsDtype) {
         throw new Error("Argument '" + argName + "' passed to '" + functionName + "' must be a " +
             ("Tensor or TensorLike, but got '" + type + "'"));
     }
-    var inferredShape = inferShape(x);
+    var inferredShape = inferShape(x, inferredDtype);
     if (!util_1.isTypedArray(x) && !Array.isArray(x)) {
         x = [x];
     }
+    var skipTypedArray = true;
     var values = inferredDtype !== 'string' ?
         util_1.toTypedArray(x, inferredDtype, environment_1.ENV.getBool('DEBUG')) :
-        util_1.flatten(x);
+        util_1.flatten(x, [], skipTypedArray);
     return tensor_1.Tensor.make(inferredShape, { values: values }, inferredDtype);
 }
 exports.convertToTensor = convertToTensor;

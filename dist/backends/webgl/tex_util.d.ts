@@ -15,7 +15,7 @@
  * =============================================================================
  */
 import { DataId, Tensor } from '../../tensor';
-import { DataType, DataValues } from '../../types';
+import { BackendValues, DataType } from '../../types';
 export declare enum TextureUsage {
     RENDER = 0,
     UPLOAD = 1,
@@ -32,7 +32,7 @@ export declare enum PhysicalTextureType {
 export interface TextureData {
     shape: number[];
     dtype: DataType;
-    values?: DataValues;
+    values?: BackendValues;
     texture?: WebGLTexture;
     complexTensors?: {
         real: Tensor;

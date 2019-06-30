@@ -147,7 +147,7 @@ function computeConv3DInfo(inShape, filterShape, strides, dilations, pad, depthw
     };
 }
 exports.computeConv3DInfo = computeConv3DInfo;
-function computeOutputShape3D(inShape, fieldSize, outDepth, stride, zeroPad, roundingMode) {
+function computeOutputShape2D(inShape, fieldSize, stride, zeroPad, roundingMode) {
     if (zeroPad == null) {
         zeroPad = computeDefaultPad(inShape, fieldSize, stride);
     }
@@ -159,7 +159,7 @@ function computeOutputShape3D(inShape, fieldSize, outDepth, stride, zeroPad, rou
     var outputCols = conditionalRound((inputCols - fieldSize + 2 * zeroPad) / stride + 1, roundingMode);
     util.assert(util.isInt(outputCols), function () { return "The output # of columns (" + outputCols + ") must be an integer. " +
         "Change the stride and/or zero pad parameters"; });
-    return [outputRows, outputCols, outDepth];
+    return [outputRows, outputCols];
 }
 function computeDefaultPad(inputShape, fieldSize, stride, dilation) {
     if (dilation === void 0) { dilation = 1; }
@@ -197,7 +197,7 @@ function getPadAndOutInfo(pad, inHeight, inWidth, strideHeight, strideWidth, fil
     if (typeof pad === 'number') {
         var padType = (pad === 0) ? 'VALID' : 'NUMBER';
         padInfo = { top: pad, bottom: pad, left: pad, right: pad, type: padType };
-        var outShape = computeOutputShape3D([inHeight, inWidth, 1], filterHeight, 1, strideHeight, pad, roundingMode);
+        var outShape = computeOutputShape2D([inHeight, inWidth], filterHeight, strideHeight, pad, roundingMode);
         outHeight = outShape[0];
         outWidth = outShape[1];
     }

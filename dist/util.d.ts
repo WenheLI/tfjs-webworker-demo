@@ -70,9 +70,11 @@ export declare function assertNonNull(a: TensorLike): void;
  *
  *  @param arr The nested array to flatten.
  *  @param result The destination array which holds the elements.
+ *  @param skipTypedArray If true, avoids flattening the typed arrays. Defaults
+ *      to false.
  */
 /** @doc {heading: 'Util', namespace: 'util'} */
-export declare function flatten<T extends number | boolean | string | Promise<number> | TypedArray>(arr: T | RecursiveArray<T>, result?: T[]): T[];
+export declare function flatten<T extends number | boolean | string | Promise<number> | TypedArray>(arr: T | RecursiveArray<T>, result?: T[], skipTypedArray?: boolean): T[];
 /**
  * Returns the size (number of elements) of the tensor given its shape.
  *
@@ -127,7 +129,7 @@ export declare function bytesPerElement(dtype: DataType): number;
  * not possible since it depends on the encoding of the html page that serves
  * the website.
  */
-export declare function bytesFromStringArray(arr: string[]): number;
+export declare function bytesFromStringArray(arr: Uint8Array[]): number;
 /** Returns true if the value is a string. */
 export declare function isString(value: {}): value is string;
 export declare function isBoolean(value: {}): boolean;
@@ -168,3 +170,20 @@ export declare function assertNonNegativeIntegerDimensions(shape: number[]): voi
  */
 /** @doc {heading: 'Util'} */
 export declare function fetch(path: string, requestInits?: RequestInit): Promise<Response>;
+/**
+ * Encodes the provided string into bytes using the provided encoding scheme.
+ *
+ * @param s The string to encode.
+ * @param encoding The encoding scheme. Defaults to utf-8.
+ *
+ */
+/** @doc {heading: 'Util'} */
+export declare function encodeString(s: string, encoding?: string): Uint8Array;
+/**
+ * Decodes the provided bytes into a string using the provided encoding scheme.
+ * @param bytes The bytes to decode.
+ *
+ * @param encoding The encoding scheme. Defaults to utf-8.
+ */
+/** @doc {heading: 'Util'} */
+export declare function decodeString(bytes: Uint8Array, encoding?: string): string;

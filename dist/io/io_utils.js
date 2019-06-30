@@ -51,12 +51,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var environment_1 = require("../environment");
 var tensor_ops_1 = require("../ops/tensor_ops");
 var util_1 = require("../util");
 var types_1 = require("./types");
-/** Used to delimit neighboring strings when encoding string tensors. */
-exports.STRING_DELIMITER = '\x00';
+/** Number of bytes reserved for the length of the string. (32bit integer). */
+var NUM_BYTES_STRING_LENGTH = 4;
 /**
  * Encode a map from names to weight values as an ArrayBuffer, along with an
  * `Array` of `WeightsManifestEntry` as specification of the encoded weights.
@@ -96,17 +95,24 @@ function encodeWeights(tensors, group) {
                         var spec = { name: name_1, shape: t.shape, dtype: t.dtype };
                         if (t.dtype === 'string') {
                             var utf8bytes = new Promise(function (resolve) { return __awaiter(_this, void 0, void 0, function () {
-                                var stringSpec, data, bytes;
+                                var vals, totalNumBytes, bytes, offset, i_1, val, bytesOfLength;
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
-                                        case 0:
-                                            stringSpec = spec;
-                                            return [4 /*yield*/, t.data()];
+                                        case 0: return [4 /*yield*/, t.bytes()];
                                         case 1:
-                                            data = _a.sent();
-                                            bytes = environment_1.ENV.platform.encodeUTF8(data.join(exports.STRING_DELIMITER));
-                                            stringSpec.byteLength = bytes.length;
-                                            stringSpec.delimiter = exports.STRING_DELIMITER;
+                                            vals = _a.sent();
+                                            totalNumBytes = vals.reduce(function (p, c) { return p + c.length; }, 0) +
+                                                NUM_BYTES_STRING_LENGTH * vals.length;
+                                            bytes = new Uint8Array(totalNumBytes);
+                                            offset = 0;
+                                            for (i_1 = 0; i_1 < vals.length; i_1++) {
+                                                val = vals[i_1];
+                                                bytesOfLength = new Uint8Array(new Uint32Array([val.length]).buffer);
+                                                bytes.set(bytesOfLength, offset);
+                                                offset += NUM_BYTES_STRING_LENGTH;
+                                                bytes.set(val, offset);
+                                                offset += val.length;
+                                            }
                                             resolve(bytes);
                                             return [2 /*return*/];
                                     }
@@ -183,10 +189,15 @@ function decodeWeights(buffer, specs) {
             offset += size * quantizationSizeFactor;
         }
         else if (dtype === 'string') {
-            var stringSpec = spec;
-            var bytes = new Uint8Array(buffer.slice(offset, offset + stringSpec.byteLength));
-            values = environment_1.ENV.platform.decodeUTF8(bytes).split(stringSpec.delimiter);
-            offset += stringSpec.byteLength;
+            var size_1 = util_1.sizeFromShape(spec.shape);
+            values = [];
+            for (var i = 0; i < size_1; i++) {
+                var byteLength = new Uint32Array(buffer.slice(offset, offset + NUM_BYTES_STRING_LENGTH))[0];
+                offset += NUM_BYTES_STRING_LENGTH;
+                var bytes = new Uint8Array(buffer.slice(offset, offset + byteLength));
+                values.push(bytes);
+                offset += byteLength;
+            }
         }
         else {
             var dtypeFactor = types_1.DTYPE_VALUE_SIZE_MAP[dtype];
